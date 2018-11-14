@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2018-11-01 15:42:33"
+	"lastUpdated": "2018-11-14 08:43:00"
 }
 
 /*
@@ -60,7 +60,7 @@ function scrape(doc, url) {
 	}
 	aid = String(tmp).match(/\d+/);
 	//Z.debug("aid: " + aid);
-
+	
 	// use BibTeX Translator
 	var translator = Zotero.loadTranslator("import");
 	translator.setTranslator("9cb70025-a888-4a29-a210-93ec52da40d4");
@@ -73,26 +73,17 @@ function scrape(doc, url) {
 
 		// PDFs are stored under https://www.aerzteblatt.de/pdf/<volume>/<issue>/pdfPageNum.pdf
 		// pdfPageNum is in the form a<firstpage> or m<firstpage>, depending on the journal part
-		var pdfPageNum = "";
-		if (item.pages.startsWith("A")) {
-			pdfPageNum = "a" + item.pages.match(/\d+/);
-		} else {
-			pdfPageNum = "m" + item.pages.match(/\d+/);
-		}
-		//Z.debug("pdfPageNum: " + pdfPageNum);
-		//Z.debug("pdfPageNum.length: " + pdfPageNum.length);
-
-		if (pdfPageNum.length > 1) {
-			var pdfURL = "https://www.aerzteblatt.de/pdf/" + item.volume.match(/\d+/) + "/" + item.issue.match(/\d+/) + "/" + pdfPageNum + ".pdf";
-			//Z.debug("pdfURL :" + pdfURL);
+		var pdfPageURL = "https://www.aerzteblatt.de/pdf.asp?id=" + aid;
+		Zotero.Utilities.HTTP.processDocuments(pdfPageURL, function(pdfDoc, item) {
+			var pdfFileURL = ZU.xpathText(pdfDoc, '//div[contains(@class, "save")]/a/@href');
+			Z.debug("pdfFileURL inside processDocuments: " + pdfFileURL);
 			item.attachments.push({
-				url: pdfURL,
-				title: "Full Text PDF",
+				url: pdfFileURL,
+				title: "Full text PDF",
 				mimeType: "application/pdf"
-			});
-		} else {
-			Z.debug("No valid PDF URL found, skipping download of attachment.");
-		}
+			})
+		});
+		
 		item.complete();
 	});
 
@@ -105,6 +96,7 @@ function scrape(doc, url) {
 		translator.translate();
 	}, null, "ISO-8859-15");
 }
+
 /** BEGIN TEST CASES **/
 var testCases = [
 	{
